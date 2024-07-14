@@ -2,7 +2,9 @@ using API.Helper;
 using Infraestructura.Data;
 using Microsoft.EntityFrameworkCore;
 using AutoMapper;
-    
+using Core.Repositorio;
+using Infraestructura;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +16,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddAutoMapper(typeof(Mapping));
+builder.Services.AddScoped<IVillaRepositorio,VillaRepositorio>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

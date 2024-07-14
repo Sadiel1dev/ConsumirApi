@@ -10,6 +10,9 @@ using Infraestructura.Data;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Core.Repositorio;
+using API.Helper;
+using System.Net;
 
 namespace API.Controllers
 {
@@ -18,72 +21,131 @@ namespace API.Controllers
     public class VillaApiController : ControllerBase
     {
         public readonly ILogger<VillaApiController> Logger;
-        public readonly Contexto Contexto ;
+        public readonly IVillaRepositorio repo ;
         public readonly IMapper Mapper ;
 
-        public VillaApiController(ILogger<VillaApiController> logger,Contexto contexto,IMapper mapper)
+        protected ApiResponse apiResponse;
+
+      
+
+        public VillaApiController(ILogger<VillaApiController> logger,IVillaRepositorio repo,IMapper mapper)
         {
             Logger = logger;
-            Contexto = contexto;
+            this.repo = repo;
             Mapper = mapper;
+            apiResponse=new();
         }
 
         
 
           [HttpGet]
-         public async Task<ActionResult<List<VillaDto>>> GetVillas(){
+         public async Task<ActionResult<ApiResponse>> GetVillas(){
+           
+           try
+           {
             Logger.LogInformation("Obtener Villas");
-
-            var villalist = await Contexto.Villas.ToListAsync();
-
-            return  Ok(Mapper.Map<List<VillaDto>>(villalist));
+            var villalist = await repo.GetAll();
+            apiResponse.Resultado=Mapper.Map<List<VillaDto>>(villalist);
+            apiResponse.statusCode=HttpStatusCode.OK;
+            return  Ok(apiResponse);
+           }
+           catch (Exception ex)
+           {
+             apiResponse.IsExitoso=false;
+             apiResponse.ErrorMesagges=new List<string>(){ex.ToString()};
+           }
+            return apiResponse;
+            
          }
          [HttpGet("id")]
-         public async Task<ActionResult<List<VillaDto>>> GetVilla(int id){
-            if (id==0)
+         public async Task<ActionResult<ApiResponse>> GetVilla(int id){
+            
+            try
             {
-                return BadRequest();
+             if (id==0)
+            {   
+                apiResponse.statusCode=HttpStatusCode.BadRequest;
+                return BadRequest(apiResponse);
             }
-            var villa =await Contexto.Villas.FirstOrDefaultAsync(v=>v.Id==id);
+            var villa =await repo.Get(v=>v.Id==id);
 
-            if (villa==null)
-            return NotFound();
+            if (villa==null){
+                apiResponse.statusCode=HttpStatusCode.NotFound;
+                return NotFound(apiResponse);
+            }
+            
 
-            return Ok(Mapper.Map<VillaDto>(villa));
+            apiResponse.Resultado=Mapper.Map<VillaDto>(villa);
+            apiResponse.statusCode=HttpStatusCode.OK;
+            return Ok(apiResponse);
+            }
+            catch (Exception ex)
+            {
+            apiResponse.IsExitoso=false;
+             apiResponse.ErrorMesagges=new List<string>(){ex.ToString()};
+           }
+            return apiResponse;
+          
+           
          }
           [HttpPost] 
-         public async Task<ActionResult<VillaDto>> CrearVilla(VillaCreateDto villa){
-            if (ModelState.IsValid==false)
+         public async Task<ActionResult<ApiResponse>> CrearVilla(VillaCreateDto villa){
+            
+            try
+            {
+                if (ModelState.IsValid==false)
             {
                 return BadRequest(ModelState);
             }
             var modelo=Mapper.Map<Villa>(villa);
-            await Contexto.Villas.AddAsync(modelo);
-            await Contexto.SaveChangesAsync();
+            modelo.FechaCreacion=DateTime.Now;
+            modelo.FechaActualizacion=DateTime.Now;
+            await repo.Crear(modelo);
+            apiResponse.Resultado=modelo;
+            apiResponse.statusCode=HttpStatusCode.Created;
 
-            return CreatedAtRoute("GetVilla",new{id=modelo.Id},modelo);
+            return CreatedAtRoute("GetVilla",new{id=modelo.Id},apiResponse);
+            }
+            catch (System.Exception ex)
+            {
+              apiResponse.IsExitoso=false;
+             apiResponse.ErrorMesagges=new List<string>(){ex.ToString()};
+           }
+            return apiResponse;
+            
+            
          }
          [HttpPut("id")]
          public async Task<IActionResult> UpdateVilla(VillaUpdateDto villa){
 
 
             var modelo=Mapper.Map<Villa>(villa);
-            Contexto.Update(modelo);
-            await Contexto.SaveChangesAsync();
-
-            return NoContent();
+            await repo.Actualizar(modelo);
+            apiResponse.statusCode=HttpStatusCode.NoContent;
+            return Ok(apiResponse);
          }
          [HttpDelete("id")]
          public async Task<IActionResult> RemoveVilla(VillaDto villa){
 
-             var modelo =await Contexto.Villas.FirstOrDefaultAsync(v=>v.Id==villa.Id);
+            try
+            {
+             var modelo =await repo.Get(v=>v.Id==villa.Id);
              if (modelo==null)
              return NotFound(ModelState);
 
-             Contexto.Villas.Remove(modelo);
-             await Contexto.SaveChangesAsync();
+             await repo.Remove(modelo);
+             apiResponse.statusCode=HttpStatusCode.NoContent;
+             return Ok(apiResponse);
+            }
+            catch (System.Exception ex)
+            {
+                apiResponse.IsExitoso=false;
+             apiResponse.ErrorMesagges=new List<string>(){ex.ToString()};
+           }
+            return BadRequest(apiResponse);
 
-             return NoContent();
+
+             
          }  
     }
 }
