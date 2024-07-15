@@ -15,3 +15,4 @@ C:\Users\nameless\Desktop\ConsumirApi\Infraestructura\obj\Debug\net8.0\refint\In
 C:\Users\nameless\Desktop\ConsumirApi\Infraestructura\obj\Debug\net8.0\Infraestructura.pdb
 C:\Users\nameless\Desktop\ConsumirApi\Infraestructura\obj\Debug\net8.0\Infraestructura.genruntimeconfig.cache
 C:\Users\nameless\Desktop\ConsumirApi\Infraestructura\obj\Debug\net8.0\ref\Infraestructura.dll
+C:\Users\nameless\Desktop\ConsumirApi\Infraestructura\obj\Debug\net8.0\Infraestructura.sourcelink.json
